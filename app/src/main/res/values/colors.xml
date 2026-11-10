@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kamin_window_bg">#EEECF3</color>
+    <color name="kamin_icon_bg">#14111A</color>
+    <color name="kamin_icon_fg">#F0B23E</color>
+    <color name="kamin_icon_detail">#F1EBE0</color>
+</resources>
