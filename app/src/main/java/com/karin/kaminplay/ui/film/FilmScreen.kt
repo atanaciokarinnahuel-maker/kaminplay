@@ -33,10 +33,19 @@ import com.karin.kaminplay.ui.components.KaminLabel
 import com.karin.kaminplay.ui.components.Poster
 import com.karin.kaminplay.ui.components.SectionHeader
 import com.karin.kaminplay.ui.home.GenreTag
+import com.karin.kaminplay.ui.home.RoomsUiState
 import com.karin.kaminplay.ui.theme.Kamin
 
 @Composable
-fun FilmScreen(film: Film, similar: List<Film>, onBack: () -> Unit, onOpenFilm: (Film) -> Unit) {
+fun FilmScreen(
+    film: Film,
+    similar: List<Film>,
+    rooms: RoomsUiState,
+    onBack: () -> Unit,
+    onOpenFilm: (Film) -> Unit,
+    onWatch: () -> Unit,
+    onCreateRoom: () -> Unit,
+) {
     val colors = Kamin.colors
     val uriHandler = LocalUriHandler.current
     Scaffold(containerColor = colors.bg, contentColor = colors.fg) { padding ->
@@ -86,15 +95,37 @@ fun FilmScreen(film: Film, similar: List<Film>, onBack: () -> Unit, onOpenFilm: 
             }
             item(key = "actions") {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (film.isPlayable) {
+                        KaminButton("Ver ahora", onClick = onWatch, icon = KaminIcons.Play, modifier = Modifier.fillMaxWidth())
+                        KaminButton(
+                            if (rooms.isBusy) "Creando sala…" else "Crear sala",
+                            onClick = onCreateRoom,
+                            primary = false,
+                            enabled = rooms.isAvailable && !rooms.isBusy,
+                            icon = KaminIcons.Rooms,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        if (rooms.error != null) {
+                            Text(rooms.error, style = Kamin.type.small, color = colors.rose)
+                        } else if (!rooms.isAvailable) {
+                            Text("Las salas necesitan Firebase con Realtime Database (ver README).", style = Kamin.type.small, color = colors.muted)
+                        }
+                    } else {
+                        Text(
+                            "Todavía no hay una copia verificada para ver esta película dentro de la app.",
+                            style = Kamin.type.small,
+                            color = colors.muted,
+                        )
+                    }
                     KaminButton(
-                        "Ver en Internet Archive",
+                        "Abrir en Internet Archive",
                         onClick = { uriHandler.openUri(film.archiveSearchUrl) },
+                        primary = !film.isPlayable,
                         icon = KaminIcons.External,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
-                        "El reproductor propio y las salas llegan en los siguientes pasos. Por ahora este botón abre la obra en Internet Archive. " +
-                            "Una bobina de 300 m de película de 35 mm dura unos ${Film.REEL_MINUTES} minutos; de ahí salen los rollos.",
+                        "El vídeo se transmite desde Internet Archive. Una bobina de 300 m de película de 35 mm dura unos ${Film.REEL_MINUTES} minutos; de ahí salen los rollos.",
                         style = Kamin.type.small,
                         color = colors.muted,
                     )

@@ -36,9 +36,13 @@ data class Film(
     val genre: Genre,
     val motif: Motif,
     val synopsis: String,
+    /** Internet Archive item that holds a playable copy, when one has been verified. */
+    val archiveId: String? = null,
 ) {
     /** A 300 m reel of 35 mm film runs about [REEL_MINUTES] minutes at 24 fps. */
     val reels: Int get() = max(1, ceil(minutes / REEL_MINUTES.toDouble()).toInt())
+
+    val isPlayable: Boolean get() = archiveId != null
 
     val archiveSearchUrl: String
         get() = "https://archive.org/search?query=" + URLEncoder.encode("$originalTitle $year", "UTF-8")

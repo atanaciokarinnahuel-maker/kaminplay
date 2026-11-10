@@ -55,8 +55,10 @@ fun HomeShell(
     search: SearchState,
     onSearchChange: (SearchState) -> Unit,
     results: List<Film>,
+    rooms: RoomsUiState,
     versionName: String,
     onOpenFilm: (Film) -> Unit,
+    onJoinRoom: (String) -> Unit,
     onSignOut: () -> Unit,
 ) {
     val colors = Kamin.colors
@@ -79,7 +81,7 @@ fun HomeShell(
                 onOpenSearch = { preset -> onSearchChange(preset); onTabChange(KaminTab.BUSCAR) },
             )
             KaminTab.BUSCAR -> SearchScreen(search, onSearchChange, results, contentPadding, onOpenFilm)
-            KaminTab.SALAS -> RoomsScreen(contentPadding)
+            KaminTab.SALAS -> RoomsScreen(rooms, contentPadding, onJoinRoom)
             KaminTab.PERFIL -> ProfileScreen(user, versionName, contentPadding, onSignOut)
         }
     }

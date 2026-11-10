@@ -1,0 +1,33 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".validate": "$code.matches(/^[A-Z2-9]{6}$/)",
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null && !data.exists()",
+          ".validate": "newData.hasChildren(['filmId', 'createdBy', 'createdAt']) && newData.child('filmId').isString() && newData.child('filmId').val().length <= 80 && newData.child('createdBy').val() === auth.uid && newData.child('createdAt').val() === now"
+        },
+        "members": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($code).child('meta').exists()",
+            ".validate": "newData.hasChildren(['name', 'online']) && newData.child('name').isString() && newData.child('name').val().length <= 60 && newData.child('online').isBoolean()"
+          }
+        },
+        "playback": {
+          ".write": "auth != null && root.child('rooms').child($code).child('members').child(auth.uid).exists()",
+          ".validate": "newData.hasChildren(['playing', 'positionMs', 'updatedAt', 'by']) && newData.child('playing').isBoolean() && newData.child('positionMs').isNumber() && newData.child('positionMs').val() >= 0 && newData.child('updatedAt').val() === now && newData.child('by').val() === auth.uid"
+        },
+        "messages": {
+          "$id": {
+            ".write": "auth != null && !data.exists() && root.child('rooms').child($code).child('members').child(auth.uid).exists()",
+            ".validate": "newData.hasChildren(['uid', 'name', 'text', 'at']) && newData.child('uid').val() === auth.uid && newData.child('name').isString() && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500 && newData.child('at').val() === now"
+          }
+        }
+      }
+    }
+  }
+}

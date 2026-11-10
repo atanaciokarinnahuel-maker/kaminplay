@@ -18,6 +18,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.karin.kaminplay.AppContainer
 import com.karin.kaminplay.auth.AuthViewModel
+import com.karin.kaminplay.rooms.RoomsViewModel
+import com.karin.kaminplay.ui.home.RoomsUiState
+import com.karin.kaminplay.watch.WatchRequest
+import com.karin.kaminplay.watch.WatchRoute
 import com.karin.kaminplay.core.CatalogSearch
 import com.karin.kaminplay.core.Era
 import com.karin.kaminplay.core.Genre
@@ -33,6 +37,8 @@ import com.karin.kaminplay.ui.login.LoginScreen
 
 private const val ROUTE_HOME = "home"
 private const val ROUTE_FILM = "film/{id}"
+private const val ROUTE_WATCH = "watch/{id}"
+private const val ROUTE_ROOM = "room/{code}"
 
 /** Session gate: nothing behind the login is composed until Firebase reports a signed-in user. */
 @Composable
@@ -50,6 +56,7 @@ fun KaminRoot(container: AppContainer, versionName: String) {
             onPreview = authViewModel::enterPreview,
         )
         is SessionState.SignedIn -> SignedInNav(
+            container = container,
             user = current.user,
             versionName = versionName,
             onSignOut = { authViewModel.signOut(context) },
@@ -58,11 +65,26 @@ fun KaminRoot(container: AppContainer, versionName: String) {
 }
 
 @Composable
-private fun SignedInNav(user: UserProfile, versionName: String, onSignOut: () -> Unit) {
+private fun SignedInNav(container: AppContainer, user: UserProfile, versionName: String, onSignOut: () -> Unit) {
     val navController = rememberNavController()
+    val roomsViewModel: RoomsViewModel = viewModel(factory = RoomsViewModel.factory(container.roomRepository))
+    val rooms by roomsViewModel.state.collectAsStateWithLifecycle()
+
+    // A room that was just created or joined opens its player.
+    LaunchedEffect(roomsViewModel, navController) {
+        roomsViewModel.opened.collect { code -> navController.navigate("room/$code") }
+    }
+
     NavHost(navController = navController, startDestination = ROUTE_HOME) {
         composable(ROUTE_HOME) {
-            HomeRoute(user, versionName, onOpenFilm = { id -> navController.navigate("film/$id") }, onSignOut = onSignOut)
+            HomeRoute(
+                user = user,
+                rooms = rooms,
+                versionName = versionName,
+                onOpenFilm = { id -> roomsViewModel.clearError(); navController.navigate("film/$id") },
+                onJoinRoom = { code -> roomsViewModel.join(code, user) },
+                onSignOut = onSignOut,
+            )
         }
         composable(ROUTE_FILM, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
             val film = SeedCatalog.byId(entry.arguments?.getString("id"))
@@ -72,16 +94,34 @@ private fun SignedInNav(user: UserProfile, versionName: String, onSignOut: () ->
                 FilmScreen(
                     film = film,
                     similar = remember(film) { SeedCatalog.similarTo(film) },
+                    rooms = rooms,
                     onBack = { navController.popBackStack() },
-                    onOpenFilm = { other -> navController.navigate("film/${other.id}") },
+                    onOpenFilm = { other -> roomsViewModel.clearError(); navController.navigate("film/${other.id}") },
+                    onWatch = { navController.navigate("watch/${film.id}") },
+                    onCreateRoom = { roomsViewModel.create(film.id, user) },
                 )
             }
+        }
+        composable(ROUTE_WATCH, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val filmId = entry.arguments?.getString("id").orEmpty()
+            WatchRoute(WatchRequest.Solo(filmId), user, container, onBack = { navController.popBackStack() })
+        }
+        composable(ROUTE_ROOM, arguments = listOf(navArgument("code") { type = NavType.StringType })) { entry ->
+            val code = entry.arguments?.getString("code").orEmpty()
+            WatchRoute(WatchRequest.Party(code), user, container, onBack = { navController.popBackStack() })
         }
     }
 }
 
 @Composable
-private fun HomeRoute(user: UserProfile, versionName: String, onOpenFilm: (String) -> Unit, onSignOut: () -> Unit) {
+private fun HomeRoute(
+    user: UserProfile,
+    rooms: RoomsUiState,
+    versionName: String,
+    onOpenFilm: (String) -> Unit,
+    onJoinRoom: (String) -> Unit,
+    onSignOut: () -> Unit,
+) {
     var tab by rememberSaveable { mutableStateOf(KaminTab.INICIO) }
     var query by rememberSaveable { mutableStateOf("") }
     var genre by rememberSaveable { mutableStateOf<Genre?>(null) }
@@ -100,8 +140,10 @@ private fun HomeRoute(user: UserProfile, versionName: String, onOpenFilm: (Strin
         search = SearchState(query, genre, era),
         onSearchChange = { query = it.query; genre = it.genre; era = it.era },
         results = results,
+        rooms = rooms,
         versionName = versionName,
         onOpenFilm = { onOpenFilm(it.id) },
+        onJoinRoom = onJoinRoom,
         onSignOut = onSignOut,
     )
 }

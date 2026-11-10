@@ -1,9 +1,8 @@
 name: Android
 
+# Every push builds an APK, so feature branches can be tried on a phone before merging.
 on:
   push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 concurrency:

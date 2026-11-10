@@ -65,4 +65,15 @@ object KaminIcons {
         moveTo(11f, 7f); lineTo(6f, 7f); lineTo(6f, 18f); lineTo(17f, 18f); lineTo(17f, 13f)
     }
     val Play: ImageVector = filled("Play") { moveTo(8f, 5f); lineTo(8f, 19f); lineTo(19f, 12f); close() }
+    val Pause: ImageVector = filled("Pause") {
+        moveTo(6f, 5f); lineTo(10f, 5f); lineTo(10f, 19f); lineTo(6f, 19f); close()
+        moveTo(14f, 5f); lineTo(18f, 5f); lineTo(18f, 19f); lineTo(14f, 19f); close()
+    }
+    val Send: ImageVector = stroked("Send") {
+        moveTo(4f, 12f); lineTo(20f, 4f); lineTo(14f, 20f); lineTo(11.5f, 13.5f); close()
+    }
+    val Copy: ImageVector = stroked("Copy") {
+        moveTo(9f, 9f); lineTo(19f, 9f); lineTo(19f, 19f); lineTo(9f, 19f); close()
+        moveTo(5f, 15f); lineTo(5f, 5f); lineTo(15f, 5f)
+    }
 }

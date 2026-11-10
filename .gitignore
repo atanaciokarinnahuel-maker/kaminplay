@@ -5,6 +5,8 @@ local.properties
 *.iml
 .kotlin/
 captures/
+node_modules/
+*-debug.log
 # Secrets: never commit these
 app/google-services.json
 *.jks
